@@ -1,10 +1,7 @@
 ---
 name: ingest
 description: Integrate sources into an evidence-linked wiki.
-version: 3.0.0
-author: FlyAIbox
 license: MIT
-platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [wiki, ingestion, evidence]

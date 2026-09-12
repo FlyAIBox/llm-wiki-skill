@@ -1,10 +1,7 @@
 ---
 name: llm-wiki
 description: Maintain a local wiki with evidence-backed briefings.
-version: 3.0.0
-author: FlyAIbox
 license: MIT
-platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [wiki, knowledge-base, research, markdown, memory, briefing]

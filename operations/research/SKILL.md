@@ -1,10 +1,7 @@
 ---
 name: research
 description: Research wiki gaps and integrate sourced findings.
-version: 3.0.0
-author: FlyAIbox
 license: MIT
-platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [wiki, research, evidence]

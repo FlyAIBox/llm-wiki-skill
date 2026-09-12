@@ -1,10 +1,7 @@
 ---
 name: lint
 description: Audit wiki structure, evidence and knowledge health.
-version: 3.0.0
-author: FlyAIbox
 license: MIT
-platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [wiki, lint, evidence]

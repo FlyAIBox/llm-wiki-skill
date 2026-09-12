@@ -1,10 +1,7 @@
 ---
 name: query
 description: Answer wiki questions with traceable evidence.
-version: 3.0.0
-author: FlyAIbox
 license: MIT
-platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [wiki, query, evidence]
