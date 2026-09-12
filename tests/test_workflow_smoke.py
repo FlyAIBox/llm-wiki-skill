@@ -83,9 +83,55 @@ class WorkflowSmokeTest(unittest.TestCase):
             draft = request("digest_prepare", target="test-only", dry_run=True)
             self.assertTrue(draft["notify"])
             self.assertEqual(request("digest_prepare", target="test-only")["id"], draft["id"])
-            self.assertEqual(request("digest_ack", id=draft["id"], receipt="synthetic-test-receipt")
-                             ["user_read"], "not_inferred")
+            # A failed or uncertain send must leave the same prepared draft eligible.
+            self.assertEqual(request("digest_prepare", target="test-only")["id"], draft["id"])
+            self.assertEqual(request("cognition_list")["items"][0]["read_revision"], 0)
+            with self.assertRaisesRegex(ValueError, "receipt"):
+                request("digest_ack", id=draft["id"], receipt="")
+            self.assertTrue(request("digest_prepare", target="test-only")["notify"])
+
+            third = base / "version-3.md"
+            newest_claim = "Version 3 runs offline without setup."
+            third.write_text(newest_claim + "\n", encoding="utf-8")
+            newest_source = request("source_import", source=str(third))["sources"][0]
+            revised = request(
+                "cognition_record", id=item["id"], checkpoint=before, topic="Connectivity",
+                kind="context_difference", old={"page": "wiki/concepts/connectivity.md",
+                                                 "claim": old_claim, "quote": old_claim},
+                new={"claim": newest_claim,
+                     "evidence": [{"path": newest_source, "quote": newest_claim}]},
+                impact="Check version before deploying.", question="Which version is in use?",
+                rationale="The latest source describes another version.",
+            )
+            self.assertEqual(revised["revision"], 2)
+            current_draft = request("digest_prepare", target="test-only")
+            self.assertNotEqual(current_draft["id"], draft["id"])
+            with self.assertRaisesRegex(ValueError, "superseded"):
+                request("digest_ack", id=draft["id"], receipt="synthetic-old-receipt")
+            self.assertEqual(request("digest_ack", id=current_draft["id"],
+                                     receipt="synthetic-test-receipt")["user_read"], "not_inferred")
             self.assertFalse(request("digest_prepare", target="test-only")["notify"])
+            self.assertEqual(request("cognition_list")["items"][0]["read_revision"], 0)
+
+            # Delivery acknowledges one revision, not every future revision.
+            fourth = base / "version-4.md"
+            latest_claim = "Version 4 runs offline with local data."
+            fourth.write_text(latest_claim + "\n", encoding="utf-8")
+            latest_source = request("source_import", source=str(fourth))["sources"][0]
+            delivered_revision = request(
+                "cognition_record", id=item["id"], checkpoint=before, topic="Connectivity",
+                kind="context_difference", old={"page": "wiki/concepts/connectivity.md",
+                                                 "claim": old_claim, "quote": old_claim},
+                new={"claim": latest_claim,
+                     "evidence": [{"path": latest_source, "quote": latest_claim}]},
+                impact="Check version before deploying.", question="Which version is in use?",
+                rationale="The most recent source describes a newer version.",
+            )
+            self.assertEqual(delivered_revision["revision"], 3)
+            next_draft = request("digest_prepare", target="test-only")
+            self.assertTrue(next_draft["notify"])
+            self.assertNotEqual(next_draft["id"], current_draft["id"])
+            self.assertEqual(request("cognition_list")["items"][0]["read_revision"], 0)
             request("cognition_feedback", id=item["id"], action="read")
 
             plan = request("schedule_plan", name="Test plan", times=["09:00"],

@@ -190,7 +190,7 @@ Agent 会关联具体记录，保存反馈，必要时更新知识页。接受�
 
 精确操作参数见[内部 JSON 接口](helper-api.md)，认知状态与投递边界见[认知生命周期](cognition.md)，
 宿主适配与官方参考见[跨 Agent 适配](agent-adapters.md)。
-仓库行为测试位于 `tests/skills/test_llm_wiki_skill.py`，使用标准库、pytest 和模拟故障，不调用网络、模型或真实消息渠道。
+仓库行为测试位于 `tests/`，使用 Python 标准库的 `unittest` 与临时目录模拟故障；选用 Python 3.11+ 解释器运行，例如 `PYTHONDONTWRITEBYTECODE=1 python3.11 -m unittest discover -s tests -v`。测试不调用网络、模型或真实消息渠道。
 
 目录与操作划分参考 [jackwener/llm-wiki](https://github.com/jackwener/llm-wiki)，
 知识持续编译的思路源于 [Karpathy 的 LLM Wiki 模式](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)。

@@ -44,8 +44,11 @@ def skill_install(root, targets=None, dry_run=False):
     resolved_targets = []
     for location in targets:
         target = Path(location).expanduser().absolute()
-        if target.is_symlink():
-            raise ValueError("Skill installation target is a symlink")
+        current = Path(target.anchor)
+        for part in target.parts[1:]:
+            current /= part
+            if current.is_symlink() and (current == target or current.parent.resolve().is_relative_to(root)):
+                raise ValueError("Skill installation target contains a symlink")
         # Resolve the explicitly selected root (including OS aliases such as /var).
         # Symlinks below that root are rejected before writing operation folders.
         target = target.resolve()
