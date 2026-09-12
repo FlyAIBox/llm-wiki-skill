@@ -1,23 +1,23 @@
 # Wiki Purpose
 
-## 建库目的
-这个知识库希望帮助用户完成什么工作、学习任务或决策？
+## Purpose
+What work, learning tasks, or decisions should this wiki help the user with?
 
-## 使用者
-谁会阅读和使用？已有知识背景、期望的解释深度是什么？
+## Audience
+Who will read and use it? What do they already know, and how much explanation do they expect?
 
-## 关注主题
-列出需要持续积累的主题，可以跨领域；避免把示例误当成固定领域。
+## Topics
+List the topics to develop over time. They may span multiple fields; do not treat examples as fixed domains.
 
-## 核心问题
-列出用户希望长期回答、持续研究的问题。
+## Core questions
+List the questions the user wants to answer over time or continue researching.
 
-## 范围边界
-说明目前不关注什么。用户可以通过对话改变范围；本文件不是拒绝新请求的依据。
+## Scope boundaries
+State what is currently out of scope. The user can change the scope through conversation; this file is not grounds for rejecting new requests.
 
-## 关注优先级
-什么变化会影响用户的工作或判断，值得优先进入认知简报？
+## Priorities
+What changes would affect the user's work or judgment and deserve priority in a cognition briefing?
 
-> 初始化时由 Agent 根据对话将以上提示替换为实际内容。
-> 未明确的信息标记为待补充，不编造用户的目标、立场或偏好。
-> 具体事实与判断放在知识页；推送时间、时区与渠道放在配置中。
+> During initialization, replace these prompts with actual content based on the conversation.
+> Mark unspecified information as pending; do not invent the user's goals, positions, or preferences.
+> Put specific facts and judgments on knowledge pages; keep delivery times, time zone, and channels in configuration.
