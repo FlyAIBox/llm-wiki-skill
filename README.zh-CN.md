@@ -137,7 +137,7 @@ Agent 会根据对话明确建库目的、关注主题和语言，必要时补�
 
 ## 文档
 
-- [英文入口技能](SKILL.md) · [中文技能说明](SKILL.zh-CN.md)
+- [入口技能](SKILL.md)
 - [中文使用手册](references/usage-manual.zh-CN.md)
 - [Agent 安装与调度细节](references/agent-adapters.md)
 - [内部辅助接口](references/helper-api.md)
@@ -145,4 +145,4 @@ Agent 会根据对话明确建库目的、关注主题和语言，必要时补�
 
 ## 致谢
 
-知识持续编译的思路源于 [Andrej Karpathy 的 LLM Wiki 模式](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)，目录与操作划分参考 [jackwener/llm-wiki](https://github.com/jackwener/llm-wiki)。
+知识持续编译的思路源于 [Andrej Karpathy 的 LLM Wiki 模式](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)。

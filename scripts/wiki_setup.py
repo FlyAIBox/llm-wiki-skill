@@ -37,8 +37,10 @@ def skill_install(root, targets=None, dry_run=False):
         for p in sorted((BUNDLE / folder).rglob("*")):
             if p.is_file() and not p.is_symlink() and "__pycache__" not in p.parts:
                 proposed[safe(root, ".llm-wiki/runtime/" + p.relative_to(BUNDLE).as_posix())] = p.read_bytes()
-    for name in ("SKILL.md", "SKILL.zh-CN.md"):
-        proposed[safe(root, ".llm-wiki/runtime/" + name)] = (BUNDLE / name).read_bytes()
+    entry = BUNDLE / "SKILL.md"
+    if not entry.is_file():
+        raise ValueError("Skill bundle is missing required SKILL.md")
+    proposed[safe(root, ".llm-wiki/runtime/SKILL.md")] = entry.read_bytes()
     resolved_targets = []
     for location in targets:
         target = Path(location).expanduser().absolute()

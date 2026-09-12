@@ -137,7 +137,7 @@ The skill captures material you ask it to save. It does not automatically collec
 
 ## Documentation
 
-- [Entry skill](SKILL.md) · [中文技能说明](SKILL.zh-CN.md)
+- [Entry skill](SKILL.md)
 - [Chinese usage manual](references/usage-manual.zh-CN.md)
 - [Agent installation and scheduling details](references/agent-adapters.md)
 - [Internal helper API](references/helper-api.md)
@@ -145,4 +145,4 @@ The skill captures material you ask it to save. It does not automatically collec
 
 ## Acknowledgments
 
-Inspired by [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f), with directory and operation organization drawing on [jackwener/llm-wiki](https://github.com/jackwener/llm-wiki).
+Inspired by [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
