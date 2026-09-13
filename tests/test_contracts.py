@@ -26,7 +26,7 @@ class VaultCase(unittest.TestCase):
     def call(self, op, **fields):
         return execute({"op": op, "root": str(self.root), **fields})
 
-    def page(self, slug, body, *, sources=None, aliases=None):
+    def page(self, slug, body, *, sources=None, aliases=None, page_type="concept"):
         path = self.root / "wiki" / f"{slug}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         title = slug.rsplit("/", 1)[-1]
@@ -34,7 +34,7 @@ class VaultCase(unittest.TestCase):
             "---\n"
             f'title: "{title}"\n'
             f'description: "Test {title}."\n'
-            'type: "concept"\n'
+            f'type: "{page_type}"\n'
             'tags: ["test"]\n'
             f"sources: {json.dumps(sources or [])}\n"
             'created: "2026-09-12"\n'
@@ -110,6 +110,53 @@ class VaultCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "registered, unchanged"):
             self.call("raw_view", source=source, text="Tampered evidence.")
 
+    def test_source_coverage_requires_citation_or_reasoned_review(self):
+        first = self.base / "architecture.md"
+        second = self.base / "navigation.md"
+        image = self.base / "diagram.png"
+        first.write_text("The loader mounts plugins.\n", encoding="utf-8")
+        second.write_text("Table of contents only.\n", encoding="utf-8")
+        image.write_bytes(b"PNG fixture bytes")
+        source_a = self.call("source_import", source=str(first))["sources"][0]
+        source_b = self.call("source_import", source=str(second))["sources"][0]
+        source_image = self.call("source_import", source=str(image))["sources"][0]
+        self.page("concepts/loader", "The loader mounts plugins.", sources=[source_a])
+        self.call("index")
+        before = (self.root / ".llm-wiki/source-coverage.json")
+        coverage = self.call("coverage")
+        self.assertFalse(before.exists())  # Coverage inspection is read-only.
+        self.assertEqual(coverage["cited"], 1)
+        self.assertEqual(coverage["uncovered"], sorted([source_b, source_image]))
+        self.assertEqual(coverage["missing_raw_views"], [source_image])
+        self.assertEqual(coverage["by_folder"]["."]["total"], 3)
+        self.assertFalse(coverage["traceability_complete"])
+        self.assertEqual(self.call("status")["coverage"]["uncovered"], 2)
+        self.assertTrue(any(s["signal"] == "unreviewed_sources" for s in self.call("status")["signals"]))
+        with self.assertRaisesRegex(ValueError, "20\+"):
+            self.call("source_review", source=source_b, outcome="no_new_knowledge", reason="duplicate")
+        with self.assertRaisesRegex(ValueError, "already cited"):
+            self.call("source_review", source=source_a, outcome="no_new_knowledge",
+                      reason="This source is already cited by the loader page.")
+        reviewed = self.call("source_review", source=source_b, outcome="no_new_knowledge",
+                             reason="Only a table of contents; all substantive claims are in cited sources.")
+        self.assertFalse(reviewed["duplicate"])
+        self.assertTrue(self.call("source_review", source=source_b, outcome="no_new_knowledge",
+                                               reason="Only a table of contents; all substantive claims are in cited sources.")["duplicate"])
+        self.call("raw_view", source=source_image, text="Diagram labels: loader, plugin.")
+        self.page("concepts/diagram", "The diagram labels loader and plugin.", sources=[source_image])
+        self.call("index")
+        complete = self.call("coverage")
+        self.assertEqual(complete["reviewed_no_page"], 1)
+        self.assertEqual(complete["uncovered"], [])
+        self.assertEqual(complete["missing_raw_views"], [])
+        self.assertTrue(complete["traceability_complete"])
+        (self.root / source_b).write_text("Tampered.\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "unchanged"):
+            self.call("source_review", source=source_b, outcome="no_new_knowledge",
+                      reason="Only a table of contents; all substantive claims are in cited sources.")
+        self.assertEqual(self.call("coverage")["changed_or_missing_sources"], [source_b])
+        self.assertFalse(self.call("coverage")["traceability_complete"])
+
     def test_graph_ignores_examples_and_resolves_aliases(self):
         self.page("concepts/alpha", "中文检索。 [[concepts/beta]] [[ghost]]\n"
                   "`[[inline-example]]`\n```md\n[[fenced-example]]\n```\n",
@@ -123,6 +170,17 @@ class VaultCase(unittest.TestCase):
         self.assertEqual(graph["orphans"], [])
         hits = self.call("search", query="中文检索")["results"]
         self.assertEqual(hits[0]["path"], "wiki/concepts/alpha.md")
+
+    def test_findings_and_methods_are_knowledge_nodes(self):
+        self.page("findings/incident", "The incident motivates [[methods/verification]].",
+                  page_type="finding")
+        self.page("methods/verification", "Verification detects [[findings/incident]].",
+                  page_type="method")
+        self.call("index")
+        result = self.call("status")
+        self.assertEqual(result["types"], {"finding": 1, "method": 1})
+        self.assertEqual(len(result["graph"]["edges"]), 2)
+        self.assertEqual(result["graph"]["wanted"], [])
 
     def test_sync_detects_same_mtime_edits_and_preserves_pending_batches(self):
         page = self.page("concepts/alpha", "First claim.")

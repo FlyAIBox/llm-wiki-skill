@@ -16,7 +16,9 @@ facts, source opinions, user judgments and inference. Preserve pre-update snapsh
 Record human feedback separately: accepting a viewpoint does not prove its factual claims.
 
 ## Initiative
-Within an authorized ingestion, complete synthesis, links, index, log and local tracking.
+Within an authorized ingestion, complete per-source semantic analysis, synthesis,
+evidenced links, coverage review, index, log and local tracking. Do not equate
+captured originals or clean structural status with a complete knowledge build.
 Record supported cognition changes for review. Only substantive, reusable answers need
 writeback. Clarify missing user intent; resolve routine implementation details directly.
 

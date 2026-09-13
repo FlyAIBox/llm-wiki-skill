@@ -25,6 +25,8 @@ and `web_extract`. Resolve capabilities through the [shared skill](../../SKILL.m
 ## How to Run
 Use the internal helper at `../../scripts/wiki_tool.py`, relative to this skill file,
 with the [JSON request interface](../../references/helper-api.md).
+For a folder or an explicitly comprehensive build, follow the
+[semantic ingestion playbook](../../references/semantic-ingest.md).
 
 ## Quick Reference
 `checkpoint` → `source_import` → extraction → knowledge synthesis → `index` → `sync`
@@ -43,9 +45,11 @@ with the [JSON request interface](../../references/helper-api.md).
 4. The helper creates reading copies for UTF-8 Markdown/text. For PDFs or other formats,
    use the host's extractor, retain page/section references and useful media links, then
    supply the actual extracted text to `raw_view`. Extraction is not a summary.
-5. Identify significant entities, concepts, decisions, questions and relationships.
-   Synthesize across sources and merge topic pages. Distinguish facts, source opinions,
-   user judgments and inference. Cite original evidence and add useful wikilinks.
+5. For each source or bounded section, analyze candidate entities, concepts, claims,
+   decisions, limitations and relationships before page generation. Reconcile names,
+   aliases and existing pages across the corpus; then create or update focused pages.
+   Distinguish facts, source opinions, user judgments and inference. Cite original
+   evidence and explain each meaningful wikilink's relationship in prose.
 6. Compare new claims with the pre-update checkpoint before replacing old wording.
    Preserve both claims when unresolved. Follow [cognition](../../references/cognition.md)
    to distinguish conflicts, updates and context differences and save exact evidence.
@@ -54,7 +58,11 @@ with the [JSON request interface](../../references/helper-api.md).
 7. Rebuild the index, append `wiki-log.md`, and track changes with `sync`. Inspect its
    pending review batch; finish the comparison and record any findings before marking
    that batch reviewed. If interrupted, leave the review pending for the next session.
-8. Report pages changed, evidence captured, important findings and unfinished extraction.
+8. Run `coverage`. For a full-folder build, resolve every uncovered source by a
+   supported knowledge-page citation or a reasoned `source_review` with outcome
+   `no_new_knowledge`; do not use the latter for unread or failed inputs. Check for
+   missing raw views and spot-check candidate-to-page coverage and important links.
+   Report pages changed, evidence captured, important findings and unfinished work.
    Scheduled briefing configuration is separate; ingestion does not subscribe the user.
 
 ## Pitfalls
@@ -63,5 +71,6 @@ mechanically create a page for every mention. Source-import success alone is not
 completion. Keep original snapshot evidence after resolving a disagreement.
 
 ## Verification
-Use `status` to check original hashes, sources and index membership; manually check
-that synthesis is supported and the cognition baseline predates updates.
+Use `status` and `coverage` to check hashes, citation coverage and index membership;
+manually check candidate-to-page coverage, relationship evidence and the cognition
+baseline. If the corpus is only partly processed, call it a partial build.

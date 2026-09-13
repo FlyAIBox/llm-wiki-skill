@@ -69,7 +69,7 @@ Verify installation files and actual agent discovery separately.
 | Add a URL, document, folder or discussion | `source_import`, `raw_view`, `checkpoint` | [ingest](operations/ingest/SKILL.md) |
 | Search or ask a question | `search`, then agent reading and semantic ranking | [query](operations/query/SKILL.md) |
 | Communities, hubs, orphans, wanted pages | `graph` | [helper API](references/helper-api.md) |
-| Statistics and health | `status`, then a content audit | [lint](operations/lint/SKILL.md) |
+| Statistics and health | `status`, `coverage`, then a content audit | [lint](operations/lint/SKILL.md) |
 | Preview or track local changes | `sync`, optional `dry_run` | [helper API](references/helper-api.md) |
 | Explore a knowledge gap | Query → collect sources → ingest | [research](operations/research/SKILL.md) |
 | Compare new versus established understanding | `review_list`, `cognition_record` | [cognition](references/cognition.md) |
@@ -91,6 +91,7 @@ my-wiki/
 │   ├── index.md
 │   ├── raw/                    # Rebuildable Markdown reading copies
 │   ├── entities/ / concepts/   # Attributed knowledge
+│   ├── findings/ / methods/    # Source-scoped observations / reusable procedures
 │   ├── comparisons/ / queries/
 │   └── assets/
 ├── sources/YYYY-MM-DD/          # Immutable originals, batch subdirectories
@@ -124,6 +125,13 @@ orphans have zero inbound links; wanted pages are unresolved links; ambiguous na
 are reported without choosing a page. Communities use deterministic label propagation,
 not an LLM claim about topic identity. Return JSON when requested; otherwise explain
 useful findings and include exact page paths.
+
+For a folder-scale build, use the [semantic ingestion playbook](references/semantic-ingest.md)
+through the [ingest operation](operations/ingest/SKILL.md). Analyze each in-scope source
+for reusable entities, concepts, claims and evidenced relationships before writing;
+deduplicate across sources without collapsing distinct topics. `coverage` exposes
+sources with no knowledge-page citation or justified no-page review. A clean structural
+`status` or raw-view count is not evidence that the corpus has been semantically covered.
 
 ### Changes, conflicts and briefings
 
@@ -161,8 +169,8 @@ works until the native scheduler returns verifiable job identifiers.
 
 ## Verification
 
-Verify outputs: root documents, original hashes, search results, resolvable links and
-sources, index membership, cognition evidence, and idempotent briefings. `status`
+Verify outputs: root documents, original hashes, source coverage, search results,
+resolvable links and sources, index membership, cognition evidence, and idempotent briefings. `status`
 provides structural evidence; the agent audits claims, contradictions and freshness.
 Test that empty briefings stay quiet and failed deliveries are not marked delivered.
 Verify running jobs in the native scheduler. User examples and setup are in the

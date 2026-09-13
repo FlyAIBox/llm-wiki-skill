@@ -22,7 +22,7 @@ Read purpose and schema; use the host's file and execution tools. In Hermes use
 `read_file`, `search_files`, `terminal` and `patch` as appropriate.
 
 ## How to Run
-Use `../../scripts/wiki_tool.py` with `status`, `graph` or `sync` in preview mode.
+Use `../../scripts/wiki_tool.py` with `status`, `coverage`, `graph` or `sync` in preview mode.
 See the [helper API](../../references/helper-api.md).
 
 ## Quick Reference
@@ -30,13 +30,16 @@ Structural report → evidence audit → severity and suggested fixes → author
 
 ## Procedure
 1. Use `status` for page/source counts, metadata, index, original hashes and pending
-   reviews. Use `graph` for communities, hubs, zero-inbound orphans, wanted pages and
+   reviews. Use `coverage` to find original sources absent from knowledge-page
+   citations, justified no-page reviews, or reading copies. Use `graph` for communities,
+   hubs, zero-inbound orphans, wanted pages and
    ambiguous links. Keep requested JSON intact; explain findings in prose otherwise.
 2. Inspect orphan and wanted pages in context. A wanted page may be an intentional
    research gap; an orphan may simply need a useful relationship. Do not fabricate links.
 3. Read low-confidence or contested pages, high-impact claims and stale evidence.
    Check citations, taxonomy consistency, contradictions, outdated versions and scope.
-   Structural status cannot prove factual correctness or semantic freshness.
+   Structural status and traceability coverage cannot prove factual correctness,
+   semantic completeness or freshness.
 4. Inspect pending cognition reviews and scheduling state. A local config saying
    active must be checked against the native scheduler before claiming a job is healthy.
 5. If asked for repairs, apply reversible structural fixes supported by evidence,

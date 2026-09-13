@@ -28,6 +28,8 @@ class InstallEntrypointTest(unittest.TestCase):
                     self.assertTrue((root / host / "skills" / operation / "SKILL.md").is_file())
             preview = wiki_setup.skill_install(root, dry_run=True)
             self.assertEqual(preview["files_to_write"], [])
+            self.assertTrue((root / "wiki/findings").is_dir())
+            self.assertTrue((root / "wiki/methods").is_dir())
             moved = Path(directory) / "moved-wiki"
             root.rename(moved)
             self.assertEqual(wiki_setup.skill_install(moved, dry_run=True)["files_to_write"], [])

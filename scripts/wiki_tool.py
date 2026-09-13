@@ -38,6 +38,9 @@ def execute(request):
         "search": lambda: analysis.search(root, request["query"], request.get("limit", 10), request.get("include_raw", False)),
         "graph": lambda: analysis.graph(root),
         "status": lambda: analysis.status(root),
+        "coverage": lambda: analysis.source_coverage(root),
+        "source_review": lambda: analysis.source_review(root, request["source"],
+                                                        request["outcome"], request["reason"]),
         "sync": lambda: analysis.sync(root, request.get("dry_run", False)),
         "index": lambda: analysis.rebuild_index(root),
         "checkpoint": lambda: checkpoint(root),
@@ -59,7 +62,7 @@ def execute(request):
     }
     if op not in functions:
         raise ValueError("Unknown helper operation: " + str(op))
-    readonly = op in ("search", "graph", "status", "review_list", "cognition_list", "schedule_plan")
+    readonly = op in ("search", "graph", "status", "coverage", "review_list", "cognition_list", "schedule_plan")
     readonly |= op in ("sync", "skill_install", "digest_prepare") and request.get("dry_run", False)
     if readonly:
         return functions[op]()

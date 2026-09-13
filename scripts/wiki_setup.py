@@ -108,8 +108,9 @@ def init(root, purpose, name="My Wiki", language="zh-CN", targets=None):
             raise ValueError(f"Initialization target already contains {name_in_root}; choose an empty vault")
     # Install preflight happens before creating any user-visible vault files.
     skill_install(root, targets, True)
-    for folder in ("wiki/raw", "wiki/entities", "wiki/concepts", "wiki/comparisons",
-                   "wiki/queries", "wiki/assets", "sources", ".llm-wiki/digests"):
+    for folder in ("wiki/raw", "wiki/entities", "wiki/concepts", "wiki/findings",
+                   "wiki/methods", "wiki/comparisons", "wiki/queries", "wiki/assets",
+                   "sources", ".llm-wiki/digests"):
         safe(root, folder).mkdir(parents=True, exist_ok=True)
     atomic_write(safe(root, "wiki-purpose.md"), purpose.rstrip() + "\n")
     atomic_write(safe(root, "wiki-schema.md"), template("wiki-schema.md"))

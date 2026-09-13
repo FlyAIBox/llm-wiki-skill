@@ -47,6 +47,9 @@ Original SHA256 and actual input paths are recorded in `source-manifest.json`.
 Text gets a derived Markdown view; binary/unknown files appear in `extraction_needed`.
 Agent synthesis into knowledge pages is still required after this mechanical step.
 
+For a full-folder build, follow the [semantic ingestion playbook](semantic-ingest.md)
+and audit source disposition before claiming completion.
+
 ```json
 {"op":"raw_view","root":"/absolute/my-wiki","source":"sources/2026-09-12/BATCH/report.pdf","text":"# Extracted text\n\nPage 3: actual source content..."}
 ```
@@ -80,8 +83,22 @@ relative links. Ignores self-links, embedded images, escaped examples and fenced
 ```
 
 Returns counts, metadata/source/index issues, immutable-source drift, content-review
-signals, graph, tracking changes, pending reviews and locally recorded schedules.
+signals, a coverage summary, graph, tracking changes, pending reviews and locally recorded schedules.
 It does not verify live native jobs or the truth of claims. The agent performs those checks.
+
+```json
+{"op":"coverage","root":"/absolute/my-wiki"}
+{"op":"source_review","root":"/absolute/my-wiki","source":"sources/2026-09-12/BATCH/navigation.md","outcome":"no_new_knowledge","reason":"Only a navigation list; the substantive pages are captured and cited separately."}
+```
+
+`coverage` is read-only. It lists registered originals cited directly in knowledge-page
+`sources` fields, those with a reasoned no-page review, uncovered sources, per-folder
+counts, missing
+reading copies, and changed or missing originals. `status.coverage` gives their counts. A source review requires the
+registered unchanged original and a specific explanation; it cannot replace evidence
+for a substantive source. `traceability_complete` means every original is accounted
+for and has a reading copy, not that every entity or relationship was discovered.
+Review decisions live in `.llm-wiki/source-coverage.json` and are bound to source SHA256.
 
 ## Local tracking and review
 

@@ -263,11 +263,102 @@ def status(root):
         rel = path.relative_to(root).as_posix()
         if rel not in registered:
             signals.append({"path": rel, "signal": "unregistered_source"})
+    coverage = source_coverage(root)
+    if coverage["uncovered"]:
+        signals.append({"path": "sources", "signal": "unreviewed_sources",
+                        "count": len(coverage["uncovered"])})
+    if coverage["missing_raw_views"]:
+        signals.append({"path": "wiki/raw", "signal": "missing_reading_copies",
+                        "count": len(coverage["missing_raw_views"])})
     cognition = read_json(safe(root, ".llm-wiki/cognition.json"), {"items": {}})
     return {"knowledge_pages": len(docs), "source_files": len(source_files), "types": dict(types),
             "raw_views": len(pages(root, True)) - len(docs), "issues": issues, "signals": signals,
+            "coverage": {"total": coverage["total"], "cited": coverage["cited"],
+                         "reviewed_no_page": coverage["reviewed_no_page"],
+                         "uncovered": len(coverage["uncovered"]),
+                         "missing_raw_views": len(coverage["missing_raw_views"]),
+                         "changed_or_missing_sources": len(coverage["changed_or_missing_sources"]),
+                         "traceability_complete": coverage["traceability_complete"]},
             "graph": g, "changes": sync(root, True), "reviews": review(root),
             "open_conflicts": sum(i.get("decision") not in ("accepted_new", "dismissed")
                                   for i in cognition["items"].values()),
             "schedules": list(cognition.get("schedules", {}).values()),
             "semantic_audit": "agent_required"}
+
+
+def source_coverage(root):
+    """Report provenance coverage; this cannot certify semantic completeness."""
+    manifest = read_json(safe(root, ".llm-wiki/source-manifest.json"), {"files": {}})["files"]
+    recorded = read_json(safe(root, ".llm-wiki/source-coverage.json"), {"files": {}})["files"]
+    cited = defaultdict(list)
+    for page in pages(root):
+        refs = page["meta"].get("sources", [])
+        if isinstance(refs, list):
+            for ref in refs:
+                if isinstance(ref, str) and ref in manifest:
+                    cited[ref].append(page["path"])
+    uncovered, missing_raw, stale_reviews, changed_sources = [], [], [], []
+    reviewed_no_page = []
+    for source, entry in sorted(manifest.items()):
+        original = safe(root, source)
+        if not original.is_file() or digest(original.read_bytes()) != entry["sha256"]:
+            changed_sources.append(source)
+        raw = safe(root, f"wiki/raw/{entry['batch']}/{entry['relative']}.md")
+        if not raw.is_file():
+            missing_raw.append(source)
+        if source in cited:
+            continue
+        review = recorded.get(source, {})
+        if (review.get("outcome") == "no_new_knowledge"
+                and review.get("sha256") == entry["sha256"]
+                and str(review.get("reason", "")).strip()):
+            reviewed_no_page.append(source)
+        else:
+            uncovered.append(source)
+            if review:
+                stale_reviews.append(source)
+    by_folder = defaultdict(Counter)
+    reviewed_set, uncovered_set, missing_set = set(reviewed_no_page), set(uncovered), set(missing_raw)
+    for source, entry in manifest.items():
+        counts = by_folder[PurePosixPath(entry["relative"]).parent.as_posix()]
+        counts["total"] += 1
+        if source in cited:
+            counts["cited"] += 1
+        elif source in reviewed_set:
+            counts["reviewed_no_page"] += 1
+        elif source in uncovered_set:
+            counts["uncovered"] += 1
+        if source in missing_set:
+            counts["missing_raw_views"] += 1
+    return {"total": len(manifest), "cited": len(cited),
+            "cited_pages": {source: sorted(paths) for source, paths in sorted(cited.items())},
+            "reviewed_no_page": len(reviewed_no_page),
+            "reviewed_no_page_sources": reviewed_no_page,
+            "uncovered": uncovered, "missing_raw_views": missing_raw,
+            "by_folder": {name: dict(counts) for name, counts in sorted(by_folder.items())},
+            "stale_reviews": stale_reviews, "changed_or_missing_sources": changed_sources,
+            "traceability_complete": not (uncovered or missing_raw or stale_reviews or changed_sources)}
+
+
+def source_review(root, source, outcome, reason):
+    """Record a justified no-page decision; page citations are the other outcome."""
+    if outcome != "no_new_knowledge":
+        raise ValueError("Only no_new_knowledge source reviews are supported")
+    if not isinstance(reason, str) or len(reason.strip()) < 20:
+        raise ValueError("Explain why this source adds no reusable knowledge (20+ characters)")
+    manifest = read_json(safe(root, ".llm-wiki/source-manifest.json"), {"files": {}})["files"]
+    entry = manifest.get(source)
+    if entry is None:
+        raise ValueError("Review requires a registered source")
+    if digest(safe(root, source).read_bytes()) != entry["sha256"]:
+        raise ValueError("Review requires an unchanged source")
+    if source in source_coverage(root)["cited_pages"]:
+        raise ValueError("Source already cited by a knowledge page")
+    path = safe(root, ".llm-wiki/source-coverage.json")
+    ledger = read_json(path, {"files": {}})
+    record = {"outcome": outcome, "reason": reason.strip(), "sha256": entry["sha256"]}
+    if ledger["files"].get(source) == record:
+        return {"source": source, "outcome": outcome, "duplicate": True}
+    ledger["files"][source] = record
+    write_json(path, ledger)
+    return {"source": source, "outcome": outcome, "duplicate": False}
