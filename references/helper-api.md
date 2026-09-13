@@ -10,6 +10,20 @@ Paths in the examples are illustrative. A native Python runner may also call `ex
 python3 /absolute/path/to/llm-wiki/scripts/wiki_tool.py /absolute/path/request.json
 ```
 
+For a short fixed request in Bash/Zsh or a POSIX shell, a quoted here-document preserves
+JSON quotes and prevents shell expansion (substitute the actual verified executable/paths):
+
+```sh
+/absolute/python3.11 /absolute/llm-wiki/scripts/wiki_tool.py <<'WIKI_REQUEST_JSON'
+{"op":"source_list","root":"/absolute/my-wiki","limit":20}
+WIKI_REQUEST_JSON
+```
+
+For source text or other arbitrary input, use the host's structured file-writing tool
+to create a JSON request file instead; a here-document delimiter must not occur in its
+payload. The helper has no `-c` JSON option. `<<<` is a Bash/Zsh here-string, not a
+portable here-document. These are shell conventions, not Pi-specific API requirements.
+
 Responses are `{ "ok": true, "result": ... }`. Errors are `{ "ok": false, "error": ... }`
 with exit code 1. Agent/user interfaces should report a meaningful outcome, not expose
 the JSON protocol as something the user has to learn. Helpers perform no network calls.
@@ -49,6 +63,28 @@ Agent synthesis into knowledge pages is still required after this mechanical ste
 
 For a full-folder build, follow the [semantic ingestion playbook](semantic-ingest.md)
 and audit source disposition before claiming completion.
+
+```json
+{"op":"source_list","root":"/absolute/my-wiki","query":"tutorial","limit":50,"offset":0}
+```
+
+Read-only inventory of registered originals (including missing files) and unregistered
+non-hidden files under `sources/`. `query` is an optional case-insensitive literal search
+over captured paths, original paths and URLs; external directories are not scanned.
+`limit` is 1–100; follow `next_offset` until null. `total` counts filtered items and
+`total_in_vault` counts all inventory items. Each item includes:
+
+- `path`, `registration`, recorded `origins` and expected `sha256`;
+- `integrity`: `unchanged`, `changed`, `missing`, or `unregistered`;
+- `reading_copy`: path and status `verified`, `missing`, `unverified`, `changed`, or
+  `invalid_origin` with an error; null for an unregistered source;
+- `coverage`: status `cited`, `reviewed_no_page`, `uncovered`, or `unregistered`, plus cited pages.
+
+Missing reading copies need extraction/rebuilding; unverified or changed copies need
+inspection before regeneration. `verified` proves recorded integrity and origin linkage,
+not extraction fidelity or full semantic review; consult `source_progress` for that work.
+Use this operation before reimporting. Do not manually copy files into `sources/` and then
+call `source_import` on them; import the external original/staging file instead.
 
 ```json
 {"op":"raw_view","root":"/absolute/my-wiki","source":"sources/2026-09-12/BATCH/report.pdf","text":"# Extracted text\n\nPage 3: actual source content..."}
@@ -115,7 +151,8 @@ It does not verify live native jobs or the truth of claims. The agent performs t
 counts, missing
 reading copies, and changed or missing originals. `status.coverage` gives their counts. A source review requires the
 registered unchanged original and a specific explanation; it cannot replace evidence
-for a substantive source. `traceability_complete` means every original is accounted
+for a substantive source. Already-cited sources do not need `source_review` and are rejected
+by that operation. `traceability_complete` means every original is accounted
 for and has a reading copy, not that every entity or relationship was discovered.
 Review decisions live in `.llm-wiki/source-coverage.json` and are bound to source SHA256.
 
@@ -163,6 +200,34 @@ then enqueues changed knowledge pages for semantic comparison. Old pending batch
 later syncs and include `before`/`after` checkpoint IDs. A first sync has no old baseline.
 `review_complete` requires a real completion note; tracking does not imply semantic review.
 Source changes are tracked and reported but never overwrite original evidence hashes.
+
+## Exact quotation assistance
+
+```json
+{"op":"quote_find","root":"/absolute/my-wiki","side":"old","checkpoint":"PRE_UPDATE_CHECKPOINT_ID","path":"wiki/concepts/offline.md","query":"connectivity","context_lines":1,"limit":5}
+{"op":"quote_find","root":"/absolute/my-wiki","path":"sources/DATE/BATCH/release.md","query":"offline"}
+{"op":"quote_verify","root":"/absolute/my-wiki","path":"sources/DATE/BATCH/release.md","quote":"Version 2 supports **offline** operation."}
+```
+
+Both operations are read-only and use exact, case-sensitive substrings, without Markdown,
+Unicode or newline normalization. `side` defaults to `new`; `old` requires a checkpoint
+and checks its knowledge-page snapshot even if the live page changed or was deleted.
+`new` validates registered origins and reading-copy ownership just like record creation;
+an optional checkpoint selects historical knowledge-page evidence. Binary inputs need
+an extracted reading copy. Neither helper creates snapshots or bypasses record validation.
+
+`quote_find` returns up to `limit` distinct whole-line candidates containing the literal
+`query`, expanded by `context_lines` (0–5, default 0). `quote_verify` checks the supplied
+`quote` and returns its exact occurrence locations. Both use `limit` 1–100 (default 10),
+return `matched`, `matches`, `has_more`, document `sha256`, optional `snapshot`, and
+`validation_scope` (`checkpoint_integrity` or `evidence_origins`). A mismatch is a normal
+`matched: false` result; damaged evidence or invalid input is an error.
+
+Each match has `quote`, a ready-to-copy serialized `quote_json` value, one-based
+`line_start`/`line_end`, zero-based `start_char`/exclusive `end_char` in Unicode codepoints,
+and `record_fields`. Use old fields inside `old` and add the agent's `claim`; retain the
+top-level checkpoint. New fields go inside `new.evidence[]`, including the checkpoint
+when applicable. Read context before selecting a quote. See the [quotation procedure](cognition.md#finding-exact-quotations).
 
 ## Cognition records and feedback
 
@@ -223,6 +288,10 @@ decision feedback is retained without resolving or suppressing newer unseen vers
 
 An empty digest returns `empty: true, notify: false`. A draft contains a stable ID, text,
 relative report path and exact item revisions. Repeated preparation reuses that ID.
+The JSON wrapper's `result.text` is the ready-to-present Markdown; rereading the report
+file is unnecessary. Validate evidence and adapt links without losing the ID or revision
+labels. `notify: false` controls scheduled delivery, not whether to answer an explicit
+user question; distinguish empty results, pending source analysis and blocked delivery.
 Prepared content is not marked sent or read. `digest_ack` requires actual receipt evidence
 after successful native delivery; it acknowledges only the included revisions for that
 destination. Updated cognition after preparation remains eligible. Superseded drafts

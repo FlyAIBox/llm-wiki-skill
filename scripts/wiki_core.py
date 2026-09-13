@@ -12,7 +12,7 @@ import tomllib
 from datetime import datetime, timezone
 
 BUNDLE = Path(__file__).resolve().parent.parent
-VERSION = "3.1.0"
+VERSION = "3.2.0"
 OPERATIONS = ("ingest", "query", "lint", "research", "briefing")
 
 

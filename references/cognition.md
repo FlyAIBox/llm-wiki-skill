@@ -43,6 +43,28 @@ supporting text. If a record's content changes, preserve its history and bump it
 For repeated evidence about the same issue, reuse its known cognition id rather than
 creating loosely paraphrased duplicate records.
 
+## Finding exact quotations
+
+Use `quote_find` before constructing a record when formatting or old wording is uncertain.
+For `old.quote`, supply the knowledge page, `side: "old"` and the pre-update checkpoint;
+the helper resolves and hash-checks the snapshot, never the overwritten current page.
+For new evidence, supply its registered source or verified reading/page path with
+`side: "new"` (default); add the review batch's `after` checkpoint for historical page evidence.
+
+Search a short literal keyword that exists in the file, such as `supports`, rather than
+a whole sentence reconstructed from rendered Markdown. The returned candidates contain
+exact original lines, line numbers, content hash, `quote_json`, and reusable `record_fields`.
+Read the surrounding context and choose a meaningful excerpt; keep `**`, punctuation,
+Unicode and line endings intact. `context_lines` expands each candidate when necessary.
+These offsets count Unicode codepoints, not bytes. `quote_json` is a serialized JSON
+string: use it as a JSON value, not as a second layer of quoted/escaped text.
+
+Use `quote_verify` if you shorten or otherwise manually select a candidate. A mismatch
+returns `matched: false`; an invalid origin or damaged snapshot is an error, not a
+reason to fall back to fuzzy validation. Both helpers are read-only. They establish
+text presence and integrity, not the truth or relevance of the claim; `cognition_record`
+still revalidates evidence when saving. Exact requests are in the [helper API](helper-api.md#exact-quotation-assistance).
+
 ## State model
 
 ```text
@@ -86,6 +108,22 @@ and verifies them, records the decision, and tracks those edits through the same
 - Read local evidence before converting a Markdown report to a channel message. Preserve
   claim attribution and useful excerpts if the recipient cannot open local file links.
 - An on-demand request can read any cognition item regardless of prior delivery state.
+
+### In-conversation delivery and previews
+
+For an explicit question or preview, answer even if there are no eligible updates.
+Use read-only `status`, `source_list`, `sync` with `dry_run: true`, `review_list`, and
+`digest_prepare` with `dry_run: true` as needed; do not create reviews or delivery attempts
+merely to answer a status question. Explain pending analysis or unknown delivery separately.
+Only scheduled, unchanged, non-actionable runs should suppress routine responses.
+
+For an authorized “send now”, follow the delivery lifecycle in the current channel.
+The prepared response's `result.text` is the report content; reopening the same report
+file is unnecessary. Check evidence, adapt links for the channel, and preserve the digest
+ID and item revisions. Record the attempt before dispatch; acknowledge only a real host
+receipt or a verified completed message. A label such as `conversation_delivered` plus
+a timestamp is not a receipt. If completion happens after the turn, reconcile on the next
+wake; if the host cannot verify it, retain delivery-unknown rather than invent success.
 
 Feedback requires the exact displayed revision. Historical read/accept/dispute/dismiss
 feedback is retained against that version and leaves newer versions eligible. Never

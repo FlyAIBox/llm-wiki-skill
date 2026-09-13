@@ -144,7 +144,8 @@ def source_import(root, source, source_url=None):
     if original.is_dir() and root.is_relative_to(original):
         raise ValueError("Source folder cannot contain the destination vault")
     if any(original.is_relative_to(root / p) for p in ("sources", "wiki", ".llm-wiki")):
-        raise ValueError("Source already inside vault storage; reuse its registered path")
+        raise ValueError("Source already inside vault storage; use source_list to find its registered path. "
+                         "If unregistered, import the external original instead of copying into sources/.")
     inputs = []
     if original.is_file():
         inputs = [(original.name, original)]

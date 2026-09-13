@@ -60,7 +60,7 @@ def quoted_evidence(root, evidence):
             data = safe(root, path).read_bytes()
         origins = origin_hashes(root, path, data)
         if quote not in data.decode('utf-8'):
-            raise ValueError('New quotation is absent from saved evidence: ' + path)
+            raise ValueError('New quotation is absent from saved evidence: ' + path + '; use quote_find or quote_verify')
         checked.append({'path': path, 'quote': quote, 'origins': origins, **snapshot(root, data)})
     return checked
 

@@ -80,6 +80,15 @@ Verify installation files and actual agent discovery separately.
 | Install, list or inspect operation skills | `skill_install`, `skill_list`, `skill_show` | [agent adaptation](references/agent-adapters.md) |
 | Resume source analysis or a decision question | `source_progress`, `question` | [helper API](references/helper-api.md) |
 | Audit reading links or save typed relationships | `links`, `links_repair`, `relation` | [helper API](references/helper-api.md) |
+| Which sources are registered or still pending? | `source_list`, then `source_progress` | [helper API](references/helper-api.md) |
+| Locate or check an exact quotation | `quote_find`, `quote_verify` | [cognition](references/cognition.md) |
+
+Choose the workflow, not just its last helper:
+
+- Ingest: inspect sources → checkpoint → import/extract → synthesize → index → log → sync → review → coverage.
+- Ask/search: retrieve → read evidence → answer; use read-only checks unless writeback is requested.
+- Deliver a briefing: reconcile → source/health preflight → sync/review → prepare → dispatch → verify receipt.
+  See the briefing operation for pending inputs, read-only previews and empty-result behavior.
 
 ## Procedure
 
@@ -149,7 +158,8 @@ may describe the remaining question without changing the vault.
 ### Changes, conflicts and briefings
 
 Before rewriting knowledge, take a `checkpoint`. After ingestion or substantive answer
-writeback, rebuild the index, append the log and run `sync` to track local changes.
+writeback, run `index`, append the log and then run `sync` to track local changes.
+`sync` scans files independently of the index; this order includes generated catalog edits in the same batch.
 The helper uses modification times, size and full SHA256, including binary sources;
 it hashes content even when modification time is unchanged. `dry_run` writes nothing.
 Pending review batches preserve before/after checkpoints across subsequent updates.
@@ -167,8 +177,9 @@ Create or update native jobs using [agent adaptation](references/agent-adapters.
 Morning, midday and before-work-end schedules are examples, not automatic subscriptions.
 Use one destination key across time slots to avoid repeating unchanged items.
 Separate prepared, delivery-unknown, delivered and user-read states. Reconcile prior
-attempts before retrying; bind feedback to the displayed revision. Stay quiet when no new actionable
-items exist; report meaningful failures or required user action. Do not claim scheduling
+attempts before retrying; bind feedback to the displayed revision. Scheduled runs stay quiet when no new actionable
+items exist; explicit questions get an answer even when there are no updates. Distinguish
+an empty digest from unprocessed sources or unknown delivery. Report meaningful failures or required user action. Do not claim scheduling
 works until the native scheduler returns verifiable job identifiers. Report configured
 status separately from verified timing, delivery and quiet-success capabilities.
 

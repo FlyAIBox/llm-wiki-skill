@@ -66,7 +66,7 @@ def record(root, checkpoint_id, old, new, topic, kind, impact, question, rationa
         old_claim = required(old.get('claim'), 'old.claim')
         old_quote = required(old.get('quote'), 'old.quote')
         if old_quote not in verified_text(root, old_entry):
-            raise ValueError('Old quotation is absent from the pre-update snapshot')
+            raise ValueError('Old quotation is absent from the pre-update snapshot; use quote_find with side=old and the checkpoint')
         old_checked = {'page': old['page'], 'claim': old_claim, 'quote': old_quote, **old_entry}
     if not isinstance(new, dict):
         raise ValueError('new must be an evidence object')
@@ -334,7 +334,9 @@ def schedule_plan(root, name, times, timezone_name, target, days=None):
         ".llm-wiki/runtime/operations/briefing/SKILL.md. Use this vault only. "
         f"Run helpers with the verified interpreter {Path(sys.executable).absolute()}. "
         "Before preparing a digest, reconcile prior native completed deliveries and unknown attempts. "
-        "Run local sync, then inspect all pending review batches and their before/after checkpoints. "
+        "Run status and source_list to check source backlog and integrity, then local sync and all pending "
+        "review batches with their before/after checkpoints. Source-only changes need ingestion analysis; "
+        "an empty digest does not prove there are no new sources. Process only already-authorized material. "
         "Read saved evidence and use semantic judgment to distinguish contradictions, updates, "
         "differences in date, version or scope, and substantive new findings/concepts/methods without an old claim. Preserve old quotations and source snapshots; "
         "record evidence-backed cognition items before completing each review batch. "

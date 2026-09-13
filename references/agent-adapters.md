@@ -22,6 +22,7 @@ only the installed entry skill, or need their own skill directory selected expli
 | Codex | Vault `AGENTS.md` and `.agents/skills/`; respect the current host's skill roots | Discover native automation tools; use their actual schemas and inspect existing jobs before creating one |
 | OpenClaw | Discover the active workspace; its skill directory may be supplied as an explicit installer target | Discover the native automation/cron tool and authorized delivery channel; inspect job status and delivery settings |
 | Hermes | Use the active profile's skill system; a default home path is not proof of the active profile | Discover the installed scheduler tools and gateway delivery capabilities; pass native job identifiers back to the binding helper |
+| Pi | Check loaded resources and current tool schemas; see the Pi notes below | Discover installed extensions or another authorized scheduler; do not assume built-in scheduling |
 | Other hosts | Load the entry skill or use a confirmed skill-directory target | Require real scheduling, file access, channel delivery and no-change suppression; otherwise provide on-demand operation |
 
 Official references checked during development on 2026-09-12:
@@ -37,6 +38,38 @@ Official references checked during development on 2026-09-12:
   this local vault; a session-bound job may stop when its execution session stops.
 - The Codex desktop host's available `automation_update` capability is authoritative
   for that host. Its availability here does not imply that another Codex environment has it.
+
+## Pi capability notes
+
+Checked against the official coding-agent documentation/source on 2026-09-13; installed
+versions and extensions can differ. These notes are an adapter, not an instruction to
+install a package, change project trust or start background jobs.
+
+- **Loading:** documented locations include `~/.pi/agent/skills/`, `.pi/skills/` and
+  `.agents/skills/`. Verify the active configuration and project trust, then check actual
+  discovery after `/reload` or an explicit `--skill` load. Existing vault-local operation
+  skills do not by themselves prove the entry skill is loaded.
+- **Tools:** current core `edit` takes a top-level `path` and `edits[]` containing
+  `oldText` / `newText`. Do not put a path inside each edit. Inspect the actual schema
+  since extensions may replace tools. Run the Python helper with a JSON file or stdin
+  using the [portable examples](helper-api.md), not an invented `-c` request option.
+- **Web sources:** absence of Hermes's `web_extract` name is not absence of retrieval.
+  Discover available extraction extensions or permitted shell HTTP tools, preserving
+  URL and retrieved content. An HTTP response is not necessarily readable article text;
+  report login, dynamic-page or extraction limits and request a supplied file only when
+  no suitable capability exists. Never bypass access restrictions.
+- **Scheduling:** `.pi/schedules/` is not an assumed core contract. If an installed
+  extension offers schedules, inspect its version, real interface, persistence, timezone
+  and receipts. Otherwise bind `unavailable`, explain the limitation and provide on-demand
+  briefings. Do not create cron/launchd files or install an extension merely to fill the gap.
+- **Delivery:** the bundled `digest_reconcile` parses Codex transcripts, not Pi sessions.
+  Do not feed Pi JSONL into it. Use a verified Pi/channel receipt if available; otherwise
+  preserve the unknown attempt. A generated report or invented timestamp is not proof
+  of a completed assistant message, notification, or user reading.
+
+Primary references: [Pi README](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent),
+[skill loading](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md),
+[edit schema](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/src/core/tools/edit.ts).
 
 ## Installation verification
 

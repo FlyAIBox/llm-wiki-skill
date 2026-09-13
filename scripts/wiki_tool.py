@@ -19,6 +19,7 @@ import wiki_setup as setup
 import wiki_links as links
 import wiki_ledger as ledger
 import wiki_delivery as delivery
+import wiki_inspect as inspect
 
 
 def execute(request):
@@ -42,6 +43,11 @@ def execute(request):
         "graph": lambda: analysis.graph(root),
         "status": lambda: analysis.status(root),
         "coverage": lambda: analysis.source_coverage(root),
+        'source_list': lambda: inspect.source_list(root, request.get('query', ''), request.get('limit', 50), request.get('offset', 0)),
+        'quote_find': lambda: inspect.quote_lookup(root, request['path'], request['query'], request.get('checkpoint'),
+                                                  request.get('side', 'new'), request.get('limit', 10), request.get('context_lines', 0)),
+        'quote_verify': lambda: inspect.quote_lookup(root, request['path'], request['quote'], request.get('checkpoint'),
+                                                    request.get('side', 'new'), request.get('limit', 10), verify=True),
         'links': lambda: links.audit(root),
         'links_repair': lambda: links.repair(root, request.get('dry_run', True)),
         'source_progress': lambda: ledger.progress(root, request.get('source'), request.get('units')),
@@ -80,7 +86,7 @@ def execute(request):
         raise ValueError("Unknown helper operation: " + str(op))
     readonly = op in ("search", "graph", "status", "coverage", "review_list", "cognition_list", "schedule_plan")
     readonly |= op in ("sync", "skill_install", "digest_prepare") and request.get("dry_run", False)
-    readonly |= op in ('links', 'delivery_pending')
+    readonly |= op in ('links', 'delivery_pending', 'source_list', 'quote_find', 'quote_verify')
     readonly |= op == 'links_repair' and request.get('dry_run', True)
     readonly |= op == 'source_progress' and request.get('source') is None
     readonly |= op == 'question' and request.get('question') is None and request.get('id') is None
