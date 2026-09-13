@@ -61,8 +61,14 @@ bundle; user-edited runtime files cause a collision instead of being silently re
    Use `schedule_plan` to get normalized schedule fields and a cohesive job prompt.
 4. Create or update the actual native job using current tool arguments. Explicitly set
    the timezone or convert through the native supported mechanism; do not trust its default.
+   Read back the effective rule and timezone. A host-local 09:00 rule is conditional on
+   the machine timezone. Record the native next run when available; label a locally
+   calculated next run as calculated rather than a native scheduler observation.
 5. After verified success, call `schedule_bind` with the plan, host identity and returned
    IDs. Only then describe it as active. If unavailable, record that state and the limitation.
+   Pass the actual `verification` fields and use the captured absolute Python executable.
+   `state: active` records native configuration; `health` separately records how much of
+   timing, delivery and quiet-success behavior has been checked.
 6. At each run, reconcile prior unacknowledged delivery, process pending cognition reviews,
    prepare new content and suppress output when empty. Deliver only to the configured target.
 7. Keep actual native pause/resume/reschedule state in agreement with the local binding.
@@ -70,3 +76,31 @@ bundle; user-edited runtime files cause a collision instead of being silently re
 The skill does not install a scheduler, start a background process, assume a messaging
 service, or write raw recurring-task directives into chat. If a host lacks delivery receipts
 or quiet-success behavior, explain the practical limit instead of pretending equivalent support.
+
+## Codex local-thread delivery
+
+Use `automation_update` heartbeat for a current-thread subscription; inspect existing
+native jobs before updating. Follow the runtime tool schema, including its constraints
+on immediate creation and explicit-timezone recurrence. Read back the persisted native
+rule instead of assuming the tool retained the requested timezone.
+
+The file adapter verifies completed assistant output in the selected local task:
+
+1. Discover the native session JSONL for the exact thread using the actual Codex home
+   and thread id. A thread may have multiple rollout files; inspect each matching
+   `session_meta.id`. Do not scan unrelated conversations or infer a path from the wiki.
+2. Before a new briefing, run `digest_reconcile` with each matching `session_path` and
+   `thread_id`. It accepts only assistant final content matching a `task_complete` event
+   and a separate final line `简报编号：DIGEST_ID`. Incomplete turns or markers occurring
+   only in user/tool content cannot confirm delivery.
+3. Inspect `delivery_pending`. When still unknown, inspect the host's run result.
+   `digest_failed` requires verified failure/non-delivery evidence, not a timeout.
+4. Before final-response delivery, call `digest_attempt` using the actual current turn
+   id. Preserve the digest marker and item revisions in the final message. Reconciliation
+   happens on the next wake, because completion occurs after this agent turn ends.
+
+Completed thread output is not proof of an OS push notification or user reading. If this
+native transcript format is unavailable, use a verified host send receipt; otherwise
+retain the unknown state and report the concrete limitation. Keep quiet-success testing
+separate from helper-level `notify: false`. Legacy migration requires an exact reviewed
+digest and native message id; use the helper API's explicit migration fields once.

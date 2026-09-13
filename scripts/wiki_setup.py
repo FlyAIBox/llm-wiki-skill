@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 from wiki_core import (BUNDLE, OPERATIONS, VERSION, atomic_write, canonical, digest,
-                       log, now, read_json, safe, write_json)
+                       log, now, read_json, safe, snapshot, write_json)
 
 
 def template(name, **values):
@@ -253,5 +253,8 @@ def raw_view(root, source, text):
             "tags": [], "created": now()[:10], "updated": now()[:10]}
     document = "---\n" + "\n".join(k + ": " + json.dumps(v, ensure_ascii=False) for k, v in head.items())
     document += "\n---\n\n" + text.rstrip() + "\n"
+    previous = snapshot(root, target.read_bytes()) if target.is_file() and target.read_bytes() != document.encode() else None
     atomic_write(target, document)
+    from wiki_links import view_manifest
+    view_manifest(root, output, source, document, before_regeneration=previous)
     return {"path": output, "source": source, "sha256": digest(document.encode("utf-8"))}

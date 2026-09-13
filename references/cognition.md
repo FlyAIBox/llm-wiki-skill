@@ -14,10 +14,14 @@ Classify after reading evidence:
 | `conflict` | Incompatible claims about the same subject under comparable conditions | Two studies give incompatible results under the same conditions |
 | `update` | New evidence changes a prior recommendation or a time-dependent fact | A later release gains a previously unavailable feature |
 | `context_difference` | Apparently conflicting claims concern different versions, dates, populations or assumptions | Cloud and on-device deployments have different constraints |
+| `new_finding`, `new_concept`, `new_method` | Important new knowledge without a prior corresponding claim | A newly captured reproducible method |
 
 Confidence in a quoted source is separate from the source's truth. The helper validates
 that quotations exist, not that the agent's interpretation is correct. Record the rationale,
 impact and open question. Avoid a record for harmless paraphrasing or every tiny edit.
+New kinds allow `old: null` and no checkpoint. Source and reading-copy hashes are
+validated before new evidence is snapshotted. Read-only hash validation cannot judge
+whether an extraction or a source's interpretation is scientifically correct.
 
 ## Comparing before and after
 
@@ -44,7 +48,7 @@ creating loosely paraphrased duplicate records.
 ```text
 Saved evidence → pre-update checkpoint → updated knowledge → pending review
     → agent comparison → cognition item (revision N) → prepared digest
-    → verified native delivery → delivered revision N
+    → delivery attempt (unknown) → verified native delivery → delivered revision N
     → user feedback (read / accept / dispute / defer)
 ```
 
@@ -67,15 +71,26 @@ and verifies them, records the decision, and tracks those edits through the same
   get acknowledged by a receipt for an old revision.
 - On confirmed success, acknowledge the draft with actual receipt evidence. On failure,
   leave it unacknowledged. On an uncertain outcome, inspect host delivery history before
-  retrying. Use the digest id as a channel idempotency key when supported.
+  retrying. Record `digest_attempt` before dispatch; an unknown attempt blocks another
+  digest to the target. Mark `digest_failed` only with confirmed failed/not-sent evidence.
+  Use the digest id as a channel idempotency key when supported.
 - A crash after sending but before acknowledgment can otherwise repeat a message.
   There is no universal exactly-once guarantee across arbitrary agent channels; use
   native receipts/idempotency and disclose missing support during setup.
 - If the scheduler sends the final response only after the agent turn finishes, do not
   pre-acknowledge. Reconcile the completed run's verified delivery on the next wake.
+- Late receipts remain valid for superseded drafts: they acknowledge only those drafts'
+  revisions and reminder generations. Receipt fields bind host, target, message id,
+  delivered time and actual native evidence. Codex completed-thread output verification
+  is distinct from OS notification delivery and user reading.
 - Read local evidence before converting a Markdown report to a channel message. Preserve
   claim attribution and useful excerpts if the recipient cannot open local file links.
 - An on-demand request can read any cognition item regardless of prior delivery state.
+
+Feedback requires the exact displayed revision. Historical read/accept/dispute/dismiss
+feedback is retained against that version and leaves newer versions eligible. Never
+reinterpret an old acceptance as acceptance of the current claim. A stale defer/unread/
+reopen request needs the user-visible current context before applying to a newer version.
 
 ## Scheduling boundaries
 

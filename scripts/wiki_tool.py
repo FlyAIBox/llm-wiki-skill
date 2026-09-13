@@ -16,6 +16,9 @@ from wiki_core import vault_root, writer, checkpoint
 import wiki_analysis as analysis
 import wiki_cognition as cognition
 import wiki_setup as setup
+import wiki_links as links
+import wiki_ledger as ledger
+import wiki_delivery as delivery
 
 
 def execute(request):
@@ -39,6 +42,13 @@ def execute(request):
         "graph": lambda: analysis.graph(root),
         "status": lambda: analysis.status(root),
         "coverage": lambda: analysis.source_coverage(root),
+        'links': lambda: links.audit(root),
+        'links_repair': lambda: links.repair(root, request.get('dry_run', True)),
+        'source_progress': lambda: ledger.progress(root, request.get('source'), request.get('units')),
+        'question': lambda: ledger.question(root, request.get('question'), request.get('id'),
+                                            request.get('status', 'open'), request.get('note'), request.get('pages')),
+        'relation': lambda: ledger.relation(root, request.get('subject'), request.get('predicate'),
+                                            request.get('object'), request.get('evidence'), request.get('scope')),
         "source_review": lambda: analysis.source_review(root, request["source"],
                                                         request["outcome"], request["reason"]),
         "sync": lambda: analysis.sync(root, request.get("dry_run", False)),
@@ -50,20 +60,31 @@ def execute(request):
         "source_import": lambda: setup.source_import(root, request["source"], request.get("source_url")),
         "raw_view": lambda: setup.raw_view(root, request["source"], request["text"]),
         "cognition_list": lambda: cognition.cognition_list(root),
-        "cognition_record": lambda: cognition.record(root, request["checkpoint"], request["old"], request["new"],
+        "cognition_record": lambda: cognition.record(root, request.get("checkpoint"), request.get("old"), request["new"],
                                                      request["topic"], request["kind"], request["impact"],
-                                                     request["question"], request["rationale"], request.get("id")),
-        "cognition_feedback": lambda: cognition.feedback(root, request["id"], request["action"], request.get("note"), request.get("until")),
+                                                     request["question"], request["rationale"], request.get("id"),
+                                                     request.get('confidence'), request.get('scope')),
+        "cognition_feedback": lambda: cognition.feedback(root, request["id"], request["action"], request.get("note"), request.get("until"), request.get('revision')),
         "digest_prepare": lambda: cognition.prepare(root, request["target"], request.get("limit", 20), request.get("dry_run", False)),
         "digest_ack": lambda: cognition.acknowledge(root, request["id"], request["receipt"]),
+        'digest_attempt': lambda: cognition.delivery_attempt(root, request['id'], request['host'], request['run_id']),
+        'digest_failed': lambda: cognition.delivery_failed(root, request['attempt_id'], request['evidence']),
+        'delivery_pending': lambda: cognition.pending_deliveries(root, request.get('target')),
+        'digest_reconcile': lambda: delivery.reconcile_codex(root, request['session_path'], request['thread_id'],
+                                                            request.get('id'), request.get('legacy_message_id')),
         "schedule_plan": lambda: cognition.schedule_plan(root, request["name"], request["times"], request["timezone"],
                                                          request["target"], request.get("days")),
-        "schedule_bind": lambda: cognition.bind_schedule(root, request["plan"], request["host"], request.get("job_ids", []), request.get("status", "active")),
+        "schedule_bind": lambda: cognition.bind_schedule(root, request["plan"], request["host"], request.get("job_ids", []), request.get("status", "active"), request.get('verification')),
     }
     if op not in functions:
         raise ValueError("Unknown helper operation: " + str(op))
     readonly = op in ("search", "graph", "status", "coverage", "review_list", "cognition_list", "schedule_plan")
     readonly |= op in ("sync", "skill_install", "digest_prepare") and request.get("dry_run", False)
+    readonly |= op in ('links', 'delivery_pending')
+    readonly |= op == 'links_repair' and request.get('dry_run', True)
+    readonly |= op == 'source_progress' and request.get('source') is None
+    readonly |= op == 'question' and request.get('question') is None and request.get('id') is None
+    readonly |= op == 'relation' and request.get('subject') is None
     if readonly:
         return functions[op]()
     with writer(root):

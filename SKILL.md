@@ -51,6 +51,9 @@ computed operations instead of inventing hashes, graph metrics or successful ins
    Supply a complete purpose document and explicit destination to the `init` helper.
 3. For an existing vault, read `wiki-purpose.md`, `wiki-schema.md`, `wiki-agent.md`,
    `wiki/index.md`, and recent `wiki-log.md` entries. Follow the requested workflow below.
+   Reuse instructions already read in this conversation when unchanged; read only the
+   operation references needed for the request. Record the working Python executable
+   as an absolute path for unattended runs.
 4. Invoke `scripts/wiki_tool.py` through the host's execution tool with one JSON
    request file or object on stdin. This is an internal helper, not a global command.
    See [helper API](references/helper-api.md) for exact requests.
@@ -75,6 +78,8 @@ Verify installation files and actual agent discovery separately.
 | Compare new versus established understanding | `review_list`, `cognition_record` | [cognition](references/cognition.md) |
 | Schedule, read or respond to briefings | `schedule_plan`, `digest_prepare`, feedback | [briefing](operations/briefing/SKILL.md) |
 | Install, list or inspect operation skills | `skill_install`, `skill_list`, `skill_show` | [agent adaptation](references/agent-adapters.md) |
+| Resume source analysis or a decision question | `source_progress`, `question` | [helper API](references/helper-api.md) |
+| Audit reading links or save typed relationships | `links`, `links_repair`, `relation` | [helper API](references/helper-api.md) |
 
 ## Procedure
 
@@ -100,6 +105,7 @@ my-wiki/
 └── .llm-wiki/
     ├── config.toml / sync-state.json
     ├── source-manifest.json / install-manifest.json
+    ├── raw-manifest.json / source-progress.json / questions.json / relations.json
     ├── checkpoints/ / snapshots/
     ├── cognition.json / digests/
     └── runtime/                # Portable helpers and playbooks
@@ -113,7 +119,7 @@ enter the baseline only when explicitly saved and attributed as such.
 
 ### Search and graph
 
-Use local BM25 retrieval with CJK tokenization. Expand a question into useful synonyms
+Use local BM25 retrieval over titles, descriptions, aliases and bodies with CJK tokenization. Expand a question into useful synonyms
 and follow related links. Read matched pages and evidence, then perform semantic ranking
 and synthesis. This is not full-corpus vector retrieval: lexically unrelated pages may
 be missed. Inspect the index or broaden local searches before claiming no knowledge exists.
@@ -125,6 +131,10 @@ orphans have zero inbound links; wanted pages are unresolved links; ambiguous na
 are reported without choosing a page. Communities use deterministic label propagation,
 not an LLM claim about topic identity. Return JSON when requested; otherwise explain
 useful findings and include exact page paths.
+Ordinary Markdown navigation is checked separately with `links`; an empty graph
+`wanted` list does not establish that reading copies, attachments or anchors work.
+Optional `relation` records add a predicate, version/scope and frozen quoted evidence
+to page endpoints; graph navigation edges alone do not assert typed relationships.
 
 For a folder-scale build, use the [semantic ingestion playbook](references/semantic-ingest.md)
 through the [ingest operation](operations/ingest/SKILL.md). Analyze each in-scope source
@@ -132,6 +142,9 @@ for reusable entities, concepts, claims and evidenced relationships before writi
 deduplicate across sources without collapsing distinct topics. `coverage` exposes
 sources with no knowledge-page citation or justified no-page review. A clean structural
 `status` or raw-view count is not evidence that the corpus has been semantically covered.
+Use `source_progress` for resumable section/page dispositions. Keep significant unanswered
+decision questions in `question` when wiki maintenance is authorized; read-only answers
+may describe the remaining question without changing the vault.
 
 ### Changes, conflicts and briefings
 
@@ -143,6 +156,8 @@ Pending review batches preserve before/after checkpoints across subsequent updat
 
 The agent compares new evidence with pre-update knowledge and distinguishes actual
 contradictions, conclusion updates, and differences in dates, versions or conditions.
+Also record important new findings, concepts or methods using the corresponding `new_*`
+kind with no fabricated old claim. Do not create a cognition item for each page or edit.
 Persist supported findings with quotations and snapshots; similarity scores cannot
 decide truth. Complete a review only after semantic comparison. See
 [cognition lifecycle](references/cognition.md).
@@ -151,9 +166,11 @@ For briefings, discover the native scheduler and gather times, timezone and dest
 Create or update native jobs using [agent adaptation](references/agent-adapters.md).
 Morning, midday and before-work-end schedules are examples, not automatic subscriptions.
 Use one destination key across time slots to avoid repeating unchanged items.
-Separate prepared, delivered and user-read states. Stay quiet when no new actionable
+Separate prepared, delivery-unknown, delivered and user-read states. Reconcile prior
+attempts before retrying; bind feedback to the displayed revision. Stay quiet when no new actionable
 items exist; report meaningful failures or required user action. Do not claim scheduling
-works until the native scheduler returns verifiable job identifiers.
+works until the native scheduler returns verifiable job identifiers. Report configured
+status separately from verified timing, delivery and quiet-success capabilities.
 
 ## Pitfalls
 

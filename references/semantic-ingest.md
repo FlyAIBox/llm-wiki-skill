@@ -9,7 +9,9 @@ alone are not a completed ingestion.
 
 Run `coverage` after capture. Group sources by topic, language pair, version and
 format; inspect the whole folder before choosing batches. Keep a per-source working
-list that can be resumed after interruption. A large corpus may be processed in
+list using `source_progress` that can be resumed after interruption. Each unit has a
+stable id, section/page locator, status, mapped pages and an explanation of deferred
+or no-new-knowledge candidates. A large corpus may be processed in
 bounded batches, but every in-scope source needs a disposition. Do not silently
 omit later files because the first batch already produced a plausible overview.
 
@@ -31,6 +33,8 @@ For each source (or each section of a long source), first analyze, then write:
    belong in readable prose; a bare wikilink or shared tag does not establish
    the relationship. Label an unsupported but useful connection as a candidate,
    not a confirmed edge.
+   Save important machine-queryable triples with `relation` when useful; its structured
+   record retains endpoint pages, predicate, scope and verified frozen quotations.
 
 ## Write a navigable knowledge network
 
@@ -79,4 +83,6 @@ build with exact remaining paths and a resumable next batch. Even when
 `traceability_complete` is true, inspect important dimensions and a sample of
 low- and high-link pages against originals: coverage counts cannot establish
 that the analysis found every meaningful concept or that any claim is true.
+Legacy imports without section records are `unplanned`; do not backfill completion
+from a file citation count. Preserve that uncertainty until the source is actually reviewed.
 Never set an arbitrary entity/page/edge-count target to imitate another tool.

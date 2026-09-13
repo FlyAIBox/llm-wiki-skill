@@ -50,11 +50,16 @@ For a folder or an explicitly comprehensive build, follow the
    aliases and existing pages across the corpus; then create or update focused pages.
    Distinguish facts, source opinions, user judgments and inference. Cite original
    evidence and explain each meaningful wikilink's relationship in prose.
+   Persist section locators, pending work and candidate-to-page dispositions with
+   `source_progress`; update it as each unit completes. Use `relation` for reusable
+   relationships that need predicate-based retrieval, preserving scope and quoted evidence.
 6. Compare new claims with the pre-update checkpoint before replacing old wording.
    Preserve both claims when unresolved. Follow [cognition](../../references/cognition.md)
    to distinguish conflicts, updates and context differences and save exact evidence.
    On a first ingest there may be no established baseline: retain cross-source disputes
    in knowledge pages without inventing previous user beliefs.
+   Important first-time knowledge can enter briefings as `new_finding`, `new_concept`
+   or `new_method` with no old claim.
 7. Rebuild the index, append `wiki-log.md`, and track changes with `sync`. Inspect its
    pending review batch; finish the comparison and record any findings before marking
    that batch reviewed. If interrupted, leave the review pending for the next session.
@@ -62,6 +67,8 @@ For a folder or an explicitly comprehensive build, follow the
    supported knowledge-page citation or a reasoned `source_review` with outcome
    `no_new_knowledge`; do not use the latter for unread or failed inputs. Check for
    missing raw views and spot-check candidate-to-page coverage and important links.
+   Run `links`; preview and apply `links_repair` to resolve captured cross-batch reading
+   links. Missing unimported destinations remain explicit gaps, not permission to fetch them.
    Report pages changed, evidence captured, important findings and unfinished work.
    Scheduled briefing configuration is separate; ingestion does not subscribe the user.
 

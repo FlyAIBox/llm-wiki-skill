@@ -29,8 +29,8 @@ Use `../../scripts/wiki_tool.py` and the [helper API](../../references/helper-ap
 All schedule creation and delivery still go through the actual host tools.
 
 ## Quick Reference
-`sync` → `review_list` → semantic comparison → `cognition_record` → `review_complete`
-→ `digest_prepare` → native delivery → `digest_ack` after verified delivery.
+Reconcile prior delivery → `sync` → `review_list` → semantic comparison → `cognition_record`
+→ `review_complete` → `digest_prepare` → `digest_attempt` → native delivery → verified receipt.
 
 ## Procedure
 1. For setup, gather intended local times, timezone and recipient/channel. Treat 09:00,
@@ -38,11 +38,18 @@ All schedule creation and delivery still go through the actual host tools.
    `schedule_plan`, then inspect existing native jobs and update a matching one or create
    it. Bind returned job IDs with `schedule_bind`. Check actual enabled state, file access
    and delivery capability before reporting success. Save unsupported setups as unavailable.
-2. On a run, serialize wiki writes, read purpose and capture local changes with `sync`.
+2. On a run, use the recorded Python executable and reconcile previous deliveries first.
+   See the concrete Codex transcript adapter in [agent adaptation](../../references/agent-adapters.md).
+   `delivery_pending` lists unknown attempts; `digest_prepare` blocks another push to
+   that destination until they are reconciled. A verified failed/not-sent outcome can
+   be recorded with `digest_failed`; elapsed time alone is not failure evidence.
+   Serialize wiki writes, read purpose and capture local changes with `sync`.
    Inspect every pending review batch. Compare its old and new checkpoint pages, read
    evidence, and search prior pages for additions that revise established understanding.
    Preserve a batch as pending if analysis was interrupted or evidence is insufficient.
-3. Classify genuine conflicts, updates and contextual differences. Save exact quotations
+3. Classify genuine conflicts, updates, contextual differences, and important new
+   findings/concepts/methods. Use `new_finding`, `new_concept` or `new_method` with
+   `old: null` when no prior claim exists. Save exact quotations
    and frozen evidence with `cognition_record`. Treat first-ingest disagreements as source
    disagreements. Mark batches complete with a substantive note after analysis, even if
    the supported result is that no cognition change was found.
@@ -52,12 +59,15 @@ All schedule creation and delivery still go through the actual host tools.
 5. Read the draft and evidence before sending. Present old/new claims, dates or scope,
    why the difference matters and what needs the user's judgment. Use channel-appropriate
    links; remote recipients need an accessible view or excerpts, not unopenable local paths.
-6. Send through the authorized native channel. Use the digest id as idempotency key when
+6. Call `digest_attempt` with the native run id before sending through the authorized channel.
+   Keep the digest id and record revision labels in the delivered message. For Codex,
+   put `简报编号：DIGEST_ID` on its own line. Use the digest id as idempotency key when
    supported. Call `digest_ack` only after an actual send receipt or verified host delivery
    status; never acknowledge merely because the report file exists or the run started.
    For host-managed end-of-run delivery, reconcile the completed run on the next wake.
+   Accept genuine late receipts for superseded drafts; acknowledge only their saved revisions.
    An unknown delivery outcome requires reconciliation before retrying.
-7. Map user feedback to the exact cognition id: read, defer, accept new, keep disputed or
+7. Map user feedback to the exact cognition id and displayed revision: read, defer, accept new, keep disputed or
    dismiss. Preserve both evidence snapshots. If accepting a new claim entails updating
    knowledge, perform and verify that edit before marking it accepted; never equate
    delivered with read. Pause or change native jobs when the user requests it, then update

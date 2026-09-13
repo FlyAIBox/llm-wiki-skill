@@ -42,6 +42,10 @@ Retrieve → read → follow links → assess evidence → answer → optionally
 5. Save only a substantive, reusable comparison, decision analysis or new synthesis.
    Ordinary lookups need no new page. Take a checkpoint before edits, cite contributing
    knowledge and original sources, update the index and append the query action to the log.
+   When maintenance/writeback is authorized, track significant unanswered questions using
+   `question` with `open` or `needs_writeback`. Mark `answered` only with an existing saved
+   answer page. Do not record ordinary lookups or imply a decision question has been answered
+   merely because its supporting sources have been imported.
 6. Run `sync` after writeback and review differences using [cognition](../../references/cognition.md).
    Read-only queries do not commit sync state or create knowledge pages.
 

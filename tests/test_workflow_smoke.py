@@ -106,10 +106,13 @@ class WorkflowSmokeTest(unittest.TestCase):
             self.assertEqual(revised["revision"], 2)
             current_draft = request("digest_prepare", target="test-only")
             self.assertNotEqual(current_draft["id"], draft["id"])
-            with self.assertRaisesRegex(ValueError, "superseded"):
-                request("digest_ack", id=draft["id"], receipt="synthetic-old-receipt")
+            receipt = lambda message: {'host': 'synthetic-test-host', 'target': 'test-only',
+                'message_id': message, 'delivered_at': '2026-09-13T08:00:00+00:00',
+                'evidence': 'Synthetic fixture; no real delivery'}
+            request("digest_ack", id=draft["id"], receipt=receipt('old-message'))
+            self.assertTrue(request('digest_prepare', target='test-only')['notify'])
             self.assertEqual(request("digest_ack", id=current_draft["id"],
-                                     receipt="synthetic-test-receipt")["user_read"], "not_inferred")
+                                     receipt=receipt('new-message'))["user_read"], "not_inferred")
             self.assertFalse(request("digest_prepare", target="test-only")["notify"])
             self.assertEqual(request("cognition_list")["items"][0]["read_revision"], 0)
 
@@ -132,7 +135,7 @@ class WorkflowSmokeTest(unittest.TestCase):
             self.assertTrue(next_draft["notify"])
             self.assertNotEqual(next_draft["id"], current_draft["id"])
             self.assertEqual(request("cognition_list")["items"][0]["read_revision"], 0)
-            request("cognition_feedback", id=item["id"], action="read")
+            request("cognition_feedback", id=item["id"], action="read", revision=3)
 
             plan = request("schedule_plan", name="Test plan", times=["09:00"],
                            timezone="Asia/Shanghai", target="test-only")

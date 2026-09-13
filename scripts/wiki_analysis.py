@@ -25,7 +25,8 @@ def search(root, query, limit=10, include_raw=False):
         raise ValueError("A nonempty query and limit between 1 and 100 are required")
     docs = pages(root, include_raw)
     counts = [Counter(tokens(p["title"] + " " + str(p["meta"].get("description", ""))
-                            + " " + p["body"])) for p in docs]
+                            + " " + " ".join(str(a) for a in p['meta'].get('aliases', [])
+                                             if isinstance(a, str)) + " " + p["body"])) for p in docs]
     lengths = [sum(c.values()) for c in counts]
     avg = sum(lengths) / len(lengths) if lengths else 1
     df = Counter(t for c in counts for t in c)
@@ -127,7 +128,9 @@ def graph(root):
     hubs = [{"page": s, "incoming": incoming[s], "outgoing": outgoing[s],
              "degree": incoming[s] + outgoing[s]} for s in slugs]
     hubs.sort(key=lambda h: (-h["degree"], h["page"]))
+    relations = read_json(safe(root, '.llm-wiki/relations.json'), {'relations': {}})['relations']
     return {"nodes": sorted(slugs), "edges": [list(e) for e in sorted(edges)],
+            'relations': list(relations.values()), 'edge_semantics': 'navigation; typed relations are separately evidenced',
             "communities": sorted(groups.values(), key=lambda g: (-len(g), g)),
             "community_method": "deterministic_label_propagation", "converged": not changed,
             "hubs": hubs[:10], "orphans": sorted(s for s in slugs if not incoming[s]),
@@ -258,6 +261,19 @@ def status(root):
         source = safe(root, path)
         if not source.is_file() or digest(source.read_bytes()) != entry["sha256"]:
             issues.append({"path": path, "issue": "immutable_source_changed_or_missing"})
+    views = read_json(safe(root, '.llm-wiki/raw-manifest.json'), {'files': {}})['files']
+    for path, entry in views.items():
+        view = safe(root, path)
+        origin = registered.get(entry.get('source'), {})
+        if not view.is_file() or digest(view.read_bytes()) != entry.get('sha256'):
+            issues.append({'path': path, 'issue': 'reading_copy_changed_or_missing'})
+        if origin.get('sha256') != entry.get('source_sha256'):
+            issues.append({'path': path, 'issue': 'reading_copy_origin_mismatch'})
+    unverified_views = [p['path'] for p in pages(root, True)
+                        if p['path'].startswith('wiki/raw/') and p['path'] not in views]
+    if unverified_views:
+        signals.append({'path': 'wiki/raw', 'signal': 'legacy_unverified_reading_copies',
+                        'count': len(unverified_views)})
     source_files = files(root, "sources")
     for path in source_files:
         rel = path.relative_to(root).as_posix()
@@ -271,6 +287,30 @@ def status(root):
         signals.append({"path": "wiki/raw", "signal": "missing_reading_copies",
                         "count": len(coverage["missing_raw_views"])})
     cognition = read_json(safe(root, ".llm-wiki/cognition.json"), {"items": {}})
+    from wiki_links import audit
+    navigation = audit(root)
+    if navigation['issues']:
+        signals.append({'path': 'wiki', 'signal': 'markdown_navigation_gaps', 'count': len(navigation['issues'])})
+    from wiki_ledger import progress, question
+    from wiki_evidence import verify_frozen
+    semantic = progress(root)
+    for ident, item in cognition['items'].items():
+        for evidence in item['content']['new']['evidence']:
+            try:
+                verify_frozen(root, evidence)
+            except (ValueError, OSError) as exc:
+                issues.append({'path': '.llm-wiki/cognition.json', 'issue': 'invalid_cognition_evidence',
+                               'id': ident, 'detail': str(exc)})
+    for relation in g['relations']:
+        for endpoint in ('subject', 'object'):
+            if not safe(root, relation[endpoint]).is_file():
+                issues.append({'path': '.llm-wiki/relations.json', 'issue': 'missing_relation_endpoint', 'id': relation['id']})
+        for evidence in relation['evidence']:
+            try:
+                verify_frozen(root, evidence)
+            except (ValueError, OSError) as exc:
+                issues.append({'path': '.llm-wiki/relations.json', 'issue': 'invalid_relation_evidence',
+                               'id': relation['id'], 'detail': str(exc)})
     return {"knowledge_pages": len(docs), "source_files": len(source_files), "types": dict(types),
             "raw_views": len(pages(root, True)) - len(docs), "issues": issues, "signals": signals,
             "coverage": {"total": coverage["total"], "cited": coverage["cited"],
@@ -283,6 +323,12 @@ def status(root):
             "open_conflicts": sum(i.get("decision") not in ("accepted_new", "dismissed")
                                   for i in cognition["items"].values()),
             "schedules": list(cognition.get("schedules", {}).values()),
+            'navigation': navigation,
+            'semantic_progress': {'unplanned_sources': semantic['unplanned_sources'],
+                                  'pending_units': semantic['pending_units'],
+                                  'semantic_review_complete': semantic['semantic_review_complete']},
+            'open_questions': [q for q in question(root)['questions'].values() if q['status'] != 'answered'],
+            'delivery_pending': [a for a in cognition.get('attempts', {}).values() if a['status'] == 'unknown'],
             "semantic_audit": "agent_required"}
 
 

@@ -34,6 +34,9 @@ Structural report → evidence audit → severity and suggested fixes → author
    citations, justified no-page reviews, or reading copies. Use `graph` for communities,
    hubs, zero-inbound orphans, wanted pages and
    ambiguous links. Keep requested JSON intact; explain findings in prose otherwise.
+   Inspect `navigation`/`links` for ordinary Markdown destinations and anchors, and
+   `semantic_progress` for unplanned sources and incomplete section reviews. Report
+   file citation coverage, navigation health and semantic completion separately.
 2. Inspect orphan and wanted pages in context. A wanted page may be an intentional
    research gap; an orphan may simply need a useful relationship. Do not fabricate links.
 3. Read low-confidence or contested pages, high-impact claims and stale evidence.
